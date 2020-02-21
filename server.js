@@ -8,9 +8,11 @@ mongoose.connect(process.env.MONGODB_URI, {
 });
 
 const express = require("express");
-const app = express();
-
+const formidableMiddleware = require("express-formidable");
 const cors = require("cors");
+
+const app = express();
+app.use(formidableMiddleware());
 app.use("/api", cors());
 
 // Le package `helmet` est une collection de protections contre certaines vulnérabilités HTTP
@@ -47,6 +49,13 @@ passport.use(
             User.authenticateLocal()
       )
 );
+/// - `http-bearer` permettra de gérer toute les requêtes authentifiées à l'aide d'un `token`
+const HTTPBearerStrategy = require("passport-http-bearer").Strategy;
+passport.use(new HTTPBearerStrategy(User.authenticateBearer())); // La méthode `authenticateBearer` a été déclarée dans le model User
+
+app.get("/", function(req, res) {
+      res.send("Welcome to the Airbnb API");
+});
 
 // Les routes sont séparées dans plusieurs fichiers
 const coreRoutes = require("./routes/core");
@@ -57,8 +66,17 @@ app.use("/api/", coreRoutes);
 app.use("/api/user", userRoutes);
 app.use("/api/room", roomRoutes);
 
-app.get("/", function(req, res) {
-      res.send("Welcome to the Airbnb API");
+// Toutes les méthodes HTTP (GET, POST, etc.) des pages non trouvées afficheront une erreur 404
+app.all("*", function(req, res) {
+      res.status(404).json({ error: "Not Found" });
+});
+
+// Ce middleware gère les cas d'erreurs
+app.use(function(err, req, res, next) {
+      if (res.statusCode === 200) res.status(400);
+      console.error(err);
+      if (process.env.NODE_ENV === "production") err = "An error occurred";
+      res.json({ error: err });
 });
 
 app.listen(process.env.PORT, function() {
