@@ -70,26 +70,32 @@ router.post("/sign_up", function(req, res) {
             }
       );
 });
-router.post("/log_in", function(req, res, next) {
-      passport.authenticate("local", { session: false }, function(
-            err,
-            user,
-            info
-      ) {
-            if (err) {
-                  res.status(400);
-                  return next(err.message);
-            }
-            if (!user) {
-                  return res.status(401).json({ error: "Unauthorized" });
-            }
-            res.json({
-                  _id: user._id,
-                  token: user.token,
-                  account: user.account
-            });
-      })(req, res, next);
+router.post("/log_in", async (req, res) => {
+      console.log("route log_in OK");
+      res.json("route log_in OK ");
 });
+
+// router.post("/log_in", function(req, res, next) {
+
+//       passport.authenticate("local", { session: false }, function(
+//             err,
+//             user,
+//             info
+//       ) {
+//             if (err) {
+//                   res.status(400);
+//                   return next(err.message);
+//             }
+//             if (!user) {
+//                   return res.status(401).json({ error: "Unauthorized" });
+//             }
+//             res.json({
+//                   _id: user._id,
+//                   token: user.token,
+//                   account: user.account
+//             });
+//       })(req, res, next);
+// });
 
 router.get("/:id", function(req, res, next) {
       passport.authenticate("bearer", { session: false }, function(
@@ -136,6 +142,7 @@ router.post("/upload_picture", uploadPicture, async (req, res) => {
             if (req.picture !== "") {
                   console.log("envoi de l'url");
                   res.status(200).json(req.picture);
+                  // ici identifier user
             }
       } catch (error) {
             console.log(error);
