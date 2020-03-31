@@ -1,4 +1,4 @@
-var mongoose = require("mongoose");
+const mongoose = require("mongoose");
 var passportLocalMongoose = require("passport-local-mongoose");
 
 var UserSchema = new mongoose.Schema({
@@ -10,6 +10,7 @@ var UserSchema = new mongoose.Schema({
       // Nous choisisons de créer un objet `account` dans lequel nous stockerons les informations non sensibles
       account: {
             username: { type: String, unique: true, required: true },
+            name: String,
             description: String,
             photos: [String],
             favorites: [

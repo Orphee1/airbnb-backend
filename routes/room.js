@@ -15,6 +15,7 @@ router.get("/around", function(req, res, next) {
 
 router.get("/", async (req, res) => {
       console.log("Here we are OK");
+      // res.json({ message: "Route room OK" });
       try {
             if (!req.query.city) {
                   res.status(400).json({ message: "City is mandatory" });

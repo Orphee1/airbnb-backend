@@ -1,11 +1,12 @@
 require("dotenv").config();
 
 const mongoose = require("mongoose");
-// mongoose.set("useCreateIndex", true);
+
 mongoose.Promise = global.Promise;
 mongoose.connect(process.env.MONGODB_URI, {
       useNewUrlParser: true,
-      useUnifiedTopology: true
+      useUnifiedTopology: true,
+      useCreateIndex: true
 });
 
 const express = require("express");
@@ -17,12 +18,12 @@ app.use(formidableMiddleware());
 app.use("/api", cors());
 
 // Le package `helmet` est une collection de protections contre certaines vulnérabilités HTTP
-const helmet = require("helmet");
-app.use(helmet());
+// const helmet = require("helmet");
+// app.use(helmet());
 
 // Les réponses (> 1024 bytes) du serveur seront compressées au format GZIP pour diminuer la quantité d'informations transmise
-const compression = require("compression");
-app.use(compression());
+// const compression = require("compression");
+// app.use(compression());
 
 // Parse le `body` des requêtes HTTP reçues
 const bodyParser = require("body-parser");
@@ -50,7 +51,7 @@ passport.use(
             User.authenticateLocal()
       )
 );
-/// - `http-bearer` permettra de gérer toute les requêtes authentifiées à l'aide d'un `token`
+// /// - `http-bearer` permettra de gérer toute les requêtes authentifiées à l'aide d'un `token`
 const HTTPBearerStrategy = require("passport-http-bearer").Strategy;
 passport.use(new HTTPBearerStrategy(User.authenticateBearer())); // La méthode `authenticateBearer` a été déclarée dans le model User
 

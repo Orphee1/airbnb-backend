@@ -4,6 +4,12 @@ const passport = require("passport");
 const uid2 = require("uid2");
 const cloudinary = require("cloudinary").v2;
 
+const SHA256 = require("crypto-js/sha256"); // Crypto hash generator
+// const SHA256 = require("sha.js");
+
+// const SHA256 = require("sha.js");
+const encBase64 = require("crypto-js/enc-base64");
+
 const User = require("../models/User");
 
 // Configuration de Cloudinary
@@ -42,7 +48,8 @@ const uploadPicture = (req, res, next) => {
 
 router.post("/sign_up", function(req, res) {
       console.log("Here we are");
-      res.json({ message: "route sign_up OK" });
+
+      // res.json({ message: "route sign_up OK" });
       User.register(
             new User({
                   email: req.body.email,
@@ -50,6 +57,7 @@ router.post("/sign_up", function(req, res) {
                   token: uid2(16), // uid2 permet de générer une clef aléatoirement. Ce token devra être regénéré lorsque l'utilisateur changera son mot de passe
                   account: {
                         username: req.body.username,
+                        // Name pas prévu dans le model
                         name: req.body.name,
                         description: req.body.description
                   }
@@ -70,35 +78,33 @@ router.post("/sign_up", function(req, res) {
             }
       );
 });
-router.post("/log_in", async (req, res) => {
-      console.log("route log_in OK");
-      res.json("route log_in OK ");
-});
+// router.post("/log_in", async (req, res) => {
+//       console.log("route log_in OK");
+//       // res.json("route log_in OK ");
 
-// router.post("/log_in", function(req, res, next) {
-
-//       passport.authenticate("local", { session: false }, function(
-//             err,
-//             user,
-//             info
-//       ) {
-//             if (err) {
-//                   res.status(400);
-//                   return next(err.message);
-//             }
-//             if (!user) {
-//                   return res.status(401).json({ error: "Unauthorized" });
-//             }
-//             res.json({
-//                   _id: user._id,
-//                   token: user.token,
-//                   account: user.account
+//       try {
+//             const user = await passport.authenticate("local", {
+//                   session: false
 //             });
-//       })(req, res, next);
+//             if (user) {
+//                   console.log("Here we are");
+//                   console.log(user);
+//                   res.status(200).json({
+//                         _id: user._id,
+//                         token: user.token,
+//                         account: user.account
+//                   });
+//             } else {
+//                   res.status(401).json({ error: "Unauthorized" });
+//             }
+//       } catch (error) {
+//             res.status(400).json({ message: error.message });
+//             console.log(error);
+//       }
 // });
 
-router.get("/:id", function(req, res, next) {
-      passport.authenticate("bearer", { session: false }, function(
+router.post("/log_in", function(req, res, next) {
+      passport.authenticate("local", { session: false }, function(
             err,
             user,
             info
@@ -110,39 +116,72 @@ router.get("/:id", function(req, res, next) {
             if (!user) {
                   return res.status(401).json({ error: "Unauthorized" });
             }
-            User.findById(req.params.id)
-                  .select("account")
-                  .populate("account.rooms")
-                  .exec()
-                  .then(function(user) {
-                        if (!user) {
-                              res.status(404);
-                              return next("User not found");
-                        }
-                        return res.json({
-                              _id: user._id,
-                              account: user.account
-                        });
-                  })
-                  .catch(function(err) {
-                        res.status(400);
-                        return next(err.message);
-                  });
+            res.json({
+                  _id: user._id,
+                  token: user.token,
+                  account: user.account
+            });
       })(req, res, next);
 });
+
+router.get("/:id", function(req, res, next) {
+      // passport.authenticate("bearer", { session: false }, function(
+      //       err,
+      //       user,
+      //       info
+      // ) {
+      //       if (err) {
+      //             res.status(400);
+      //             return next(err.message);
+      //       }
+      //       if (!user) {
+      //             return res.status(401).json({ error: "Unauthorized" });
+      //       }
+      //       User.findById(req.params.id)
+      //             .select("account")
+      //             .populate("account.rooms")
+      //             .exec()
+      //             .then(function(user) {
+      //                   if (!user) {
+      //                         res.status(404);
+      //                         return next("User not found");
+      //                   }
+      //                   return res.json({
+      //                         _id: user._id,
+      //                         account: user.account
+      //                   });
+      //             })
+      //             .catch(function(err) {
+      //                   res.status(400);
+      //                   return next(err.message);
+      //             });
+      // })(req, res, next);
+});
+
+// Update
 
 router.post("/upload_picture", uploadPicture, async (req, res) => {
       // res.json({ message: "route upload_picture OK" });
       console.log("Route upload_picture OK");
+      console.log(req.query);
+      const id = req.query.id;
+      const token = req.query.token;
 
       try {
             // const { picture } = req.files;
             // console.log(req.files.picture.path);
             console.log(req.picture);
             if (req.picture !== "") {
+                  // ici identifier user
+                  const UserToUpdate = await User.findOne({ _id: id });
+                  // console.log(UserToUpdate);
+
+                  UserToUpdate.account.photos = req.picture;
+
+                  await UserToUpdate.save();
+                  console.log(UserToUpdate);
                   console.log("envoi de l'url");
                   res.status(200).json(req.picture);
-                  // ici identifier user
             }
       } catch (error) {
             console.log(error);
