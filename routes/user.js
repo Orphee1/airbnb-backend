@@ -3,14 +3,10 @@ const router = express.Router();
 const passport = require("passport");
 const uid2 = require("uid2");
 const cloudinary = require("cloudinary").v2;
-
-const SHA256 = require("crypto-js/sha256"); // Crypto hash generator
-// const SHA256 = require("sha.js");
-
-// const SHA256 = require("sha.js");
-const encBase64 = require("crypto-js/enc-base64");
+const formidableMiddleware = require("express-formidable");
 
 const User = require("../models/User");
+const authenticate = require("../middleware/authenticate");
 
 // Configuration de Cloudinary
 cloudinary.config({
@@ -78,32 +74,11 @@ router.post("/sign_up", function(req, res) {
             }
       );
 });
-// router.post("/log_in", async (req, res) => {
-//       console.log("route log_in OK");
-//       // res.json("route log_in OK ");
-
-//       try {
-//             const user = await passport.authenticate("local", {
-//                   session: false
-//             });
-//             if (user) {
-//                   console.log("Here we are");
-//                   console.log(user);
-//                   res.status(200).json({
-//                         _id: user._id,
-//                         token: user.token,
-//                         account: user.account
-//                   });
-//             } else {
-//                   res.status(401).json({ error: "Unauthorized" });
-//             }
-//       } catch (error) {
-//             res.status(400).json({ message: error.message });
-//             console.log(error);
-//       }
-// });
 
 router.post("/log_in", function(req, res, next) {
+      console.log("Route log-in OK");
+      // console.log(req.fields);
+
       passport.authenticate("local", { session: false }, function(
             err,
             user,
@@ -124,69 +99,87 @@ router.post("/log_in", function(req, res, next) {
       })(req, res, next);
 });
 
-router.get("/:id", function(req, res, next) {
-      // passport.authenticate("bearer", { session: false }, function(
-      //       err,
-      //       user,
-      //       info
-      // ) {
-      //       if (err) {
-      //             res.status(400);
-      //             return next(err.message);
-      //       }
-      //       if (!user) {
-      //             return res.status(401).json({ error: "Unauthorized" });
-      //       }
-      //       User.findById(req.params.id)
-      //             .select("account")
-      //             .populate("account.rooms")
-      //             .exec()
-      //             .then(function(user) {
-      //                   if (!user) {
-      //                         res.status(404);
-      //                         return next("User not found");
-      //                   }
-      //                   return res.json({
-      //                         _id: user._id,
-      //                         account: user.account
-      //                   });
-      //             })
-      //             .catch(function(err) {
-      //                   res.status(400);
-      //                   return next(err.message);
-      //             });
-      // })(req, res, next);
-});
+// Route upload with passport authentication httpBearerStrategy
 
-// Update
+// router.post(
+//       "/upload_picture",
 
-router.post("/upload_picture", uploadPicture, async (req, res) => {
-      // res.json({ message: "route upload_picture OK" });
-      console.log("Route upload_picture OK");
-      console.log(req.query);
-      const id = req.query.id;
-      const token = req.query.token;
+//       formidableMiddleware(),
 
-      try {
-            // const { picture } = req.files;
-            // console.log(req.files.picture.path);
-            console.log(req.picture);
-            if (req.picture !== "") {
-                  // ici identifier user
-                  const UserToUpdate = await User.findOne({ _id: id });
-                  // console.log(UserToUpdate);
+//       // uploadPicture,
+//       function(req, res, next) {
+//             console.log("Route upload picture OK");
+//             // console.log(req.query);
+//             // const id = req.query.id;
+//             // const token = req.query.token;
+//             passport.authenticate("bearer", { session: false }, function(
+//                   err,
+//                   user
+//             ) {
+//                   console.log("here we are");
 
-                  UserToUpdate.account.photos = req.picture;
+//                   if (err) {
+//                         res.status(400);
+//                         return next(err.message);
+//                   }
+//                   if (!user) {
+//                         return res.status(401).json({ error: "Unauthorized" });
+//                   } else {
+//                         return res.status(200).json({ message: "Authorized" });
+//                         // console.log(req.picture);
+//                         // if (req.picture !== "") {
+//                         // // ici identifier user
+//                         // const UserToUpdate = await User.findOne({ _id: id });
+//                         // console.log(UserToUpdate);
 
-                  await UserToUpdate.save();
-                  console.log(UserToUpdate);
-                  console.log("envoi de l'url");
-                  res.status(200).json(req.picture);
+//                         // UserToUpdate.account.photos = req.picture;
+
+//                         // await UserToUpdate.save();
+//                         // console.log(UserToUpdate);
+//                         // console.log("envoi de l'url");
+//                         // res.status(200).json(req.picture);
+//                   }
+//             });
+//       }
+// );
+
+// Route upload with my authenticate middleware
+
+router.post(
+      "/upload_picture",
+      authenticate,
+      formidableMiddleware(),
+      uploadPicture,
+      async (req, res) => {
+            // res.json({ message: "route upload_picture OK" });
+            console.log("Route upload_picture OK");
+            console.log(req.query);
+
+            const token = req.query.token;
+
+            try {
+                  // const { picture } = req.files;
+                  // console.log(req.files.picture.path);
+                  console.log(req.picture);
+                  if (req.picture !== "") {
+                        // ici identifier user
+                        const UserToUpdate = await User.findOne({
+                              token: token
+                        });
+                        // console.log(UserToUpdate);
+
+                        UserToUpdate.account.photos = req.picture;
+
+                        await UserToUpdate.save();
+                        console.log(UserToUpdate);
+                        console.log("envoi de l'url");
+                        res.status(200).json(req.picture);
+                  }
+            } catch (error) {
+                  console.log(error);
+                  res.status(400).json({ message: error.message });
             }
-      } catch (error) {
-            console.log(error);
-            res.status(400).json({ message: error.message });
       }
-});
+);
 
 module.exports = router;

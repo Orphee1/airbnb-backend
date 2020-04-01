@@ -42,15 +42,37 @@ UserSchema.statics.authenticateLocal = function() {
                   if (user) {
                         return user.authenticate(password, cb);
                   } else {
-                        return cb(null, false);
+                        return cb(
+                              null,
+                              false
+                              //       {
+                              //       message: "Incorrect password."
+                              // }
+                        );
                   }
             });
       };
 };
 
 // Cette méthode sera utilisée par la strategie `passport-http-bearer` pour trouver un utilisateur en fonction de son `token`
+// UserSchema.statics.authenticateBearer = function() {
+//       var _self = this;
+
+//       return function(token, cb) {
+//             if (!token) {
+//                   cb(null, false);
+//             } else {
+//                   _self.findOne({ token: token }, function(err, user) {
+//                         if (err) return cb(err);
+//                         if (!user) return cb(null, false);
+//                         return cb(null, user);
+//                   });
+//             }
+//       };
+// };
 UserSchema.statics.authenticateBearer = function() {
       var _self = this;
+
       return function(token, cb) {
             if (!token) {
                   cb(null, false);
@@ -63,5 +85,4 @@ UserSchema.statics.authenticateBearer = function() {
             }
       };
 };
-
 module.exports = mongoose.model("User", UserSchema, "users");

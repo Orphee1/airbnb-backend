@@ -14,7 +14,7 @@ const formidableMiddleware = require("express-formidable");
 const cors = require("cors");
 
 const app = express();
-app.use(formidableMiddleware());
+// app.use(formidableMiddleware());
 app.use("/api", cors());
 
 // Le package `helmet` est une collection de protections contre certaines vulnérabilités HTTP
@@ -53,7 +53,15 @@ passport.use(
 );
 // /// - `http-bearer` permettra de gérer toute les requêtes authentifiées à l'aide d'un `token`
 const HTTPBearerStrategy = require("passport-http-bearer").Strategy;
-passport.use(new HTTPBearerStrategy(User.authenticateBearer())); // La méthode `authenticateBearer` a été déclarée dans le model User
+passport.use(
+      new HTTPBearerStrategy(
+            {
+                  // Idéalement je préciserais ici qu'il lui faut attendre token en query.param???
+                  // token: "token"
+            },
+            User.authenticateBearer()
+      )
+); // La méthode `authenticateBearer` a été déclarée dans le model User
 
 app.get("/", function(req, res) {
       res.send("Welcome to the Airbnb API");
